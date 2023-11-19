@@ -18,12 +18,11 @@ void verificaSinais(char **numero, int *negativo) {
     if (*negativo) {
         // Move todo o bloco de memória uma posição para a esquerda, removendo o sinal de negativo do número
         memmove(*numero, *numero + 1, comprimento);
-        *numero = realloc(*numero, (comprimento + 1) * sizeof(char));
-        comprimento = strlen(*numero);
+        *numero = realloc(*numero, (comprimento) * sizeof(char));
     }
+    printf("numero mudado verificaSinais: %s\n", *numero);
+
 }
-
-
 
 size_t* findBiggest(size_t *primeiroTamanho, size_t *segundoTamanho){
     if(*primeiroTamanho > *segundoTamanho)
@@ -52,18 +51,26 @@ char* readNumber(size_t *tamanho, int *numeroNegativo){
     *tamanho = 0; // define o valor de tamanho para 0;
 
     int c; // cria um inteiro c
+
     while((c = getchar())!= '\n'){ //Lê os dados do usuário utilizando getchar() para pegar digito a digito enquanto a entrada for diferente de '\n'
         //Bloco condicional para aumentar, se necessário, a memória alocada no vetor
         if (*tamanho == capacidade){ //Se o tamanho do vetor for igual a capacidade
-            capacidade += capacidade/4; //Aumente a capacidade do vetor em 25%
+            capacidade *= 2; //Aumente a capacidade do vetor em 25%
             numero = realloc(numero, capacidade * sizeof(char)); //Comando para realocar a memória do vetor para a nova capacidade incrementada
             verificaAlocacao(numero);
         }
         numero[(*tamanho)++] = (char)c;
     }
 
+    if (*tamanho > 0) {
+        numero[(*tamanho)] = '\0';
+        (*tamanho)--;
+    }
+
     verificaSinais(&numero, numeroNegativo);
-    *tamanho = strlen(numero);
+
+    *tamanho = strlen(numero);  
+    numero = realloc(numero, (*tamanho + 1) * sizeof(char));  
 
     invertNumber(numero);
 
@@ -87,18 +94,11 @@ char* sum(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho,
         int primeiroDigito = (i < *primeiroTamanho) ? primeiroNumero[i] - '0': 0;
         int segundoDigito = (i < *segundoTamanho) ? segundoNumero[i] - '0': 0;
 
-        printf("%d iteracao --- primeiro digito: %d --- segundo digito: %d --- carry: %d", i, primeiroDigito, segundoDigito, carry);
-
-
         int soma = primeiroDigito + segundoDigito + carry;
-        
-        printf("--- soma: %d --- ", soma);
 
         carry = soma/10;
-
+        
         resultado[i] = (char)(soma % 10 + '0');
-
-        printf("resultado: %c\n", resultado[i]);
     }
 
     if(carry > 0){
@@ -140,5 +140,4 @@ int main(int argc, char const *argv[]){
 
     return 0;
 }
-
 
