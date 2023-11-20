@@ -4,6 +4,8 @@
 
 #define CAPACIDADE_INICIAL 10 //Define um tamanho inicial para o vetor que armazenará os números
 
+
+//Verifica a alocação de memória, se der erro, encerra o programa
 void verificaAlocacao(char *ptr) {
     if (ptr == NULL) {
         printf("Erro ao alocar memória\n");
@@ -11,6 +13,11 @@ void verificaAlocacao(char *ptr) {
     }
 } 
 
+void liberaMemoria(char *numero){
+    free(numero-1);
+}
+
+//Verifica se um numero é negativo, se for, salva true em uma variavel do tipo inteiro, remove o sinal do vetor, e desloca tudo para a esquerda
 void verificaSinais(char **numero, int *negativo) {
     size_t comprimento = strlen(*numero);
     *negativo = ((*numero)[0] == '-');
@@ -18,12 +25,10 @@ void verificaSinais(char **numero, int *negativo) {
     if (*negativo) {
         // Move todo o bloco de memória uma posição para a esquerda, removendo o sinal de negativo do número
         memmove(*numero, *numero + 1, comprimento);
-        *numero = realloc(*numero, (comprimento) * sizeof(char));
     }
-    printf("numero mudado verificaSinais: %s\n", *numero);
-
 }
 
+//Encontra o maior numero (em digitos) para determinar o tamanho do vetor resultado na soma e na subtração
 size_t* findBiggest(size_t *primeiroTamanho, size_t *segundoTamanho){
     if(*primeiroTamanho > *segundoTamanho)
         return primeiroTamanho;
@@ -31,6 +36,7 @@ size_t* findBiggest(size_t *primeiroTamanho, size_t *segundoTamanho){
         return segundoTamanho;
 }
 
+//Função que inverte o vetor de numeros
 void invertNumber(char *numero){
     char temp;
     size_t tamanho = strlen(numero);
@@ -41,8 +47,16 @@ void invertNumber(char *numero){
     }
 }
 
+void removeZerosAEsquerda(char *numero) {
+    size_t zerosAEsquerda = 0;
+    while (*numero == '0') {
+        zerosAEsquerda++;
+        numero++;
+    }
+    memmove(numero - zerosAEsquerda, numero, strlen(numero) + 1);
+}
 
-//Função que lê os números digitados pelo usuario e inverte
+//Função que lê os números digitados pelo usuario
 char* readNumber(size_t *tamanho, int *numeroNegativo){ 
 
     size_t capacidade = CAPACIDADE_INICIAL; 
@@ -78,6 +92,12 @@ char* readNumber(size_t *tamanho, int *numeroNegativo){
 
 }
 
+char verificaOperacao(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero, char *operacao){
+    
+}
+
+
+//Função de soma
 char* sum(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero){
     // somar posição a posição, se passar de 9 adicionar lógica de carry para passar a casa da dezena para a proxima posição somando
     // pensar em como encerrar o processo quando o tamanho de um dos vetores chegar ao final e só repetir ate os numeros até o final dos carry
@@ -113,11 +133,43 @@ char* sum(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho,
     return resultado;
 }
 
-char* subtract(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero){
-   
+//Função de subtração
+char* subtract(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero) {
+    size_t tamanhoMaximo = (*findBiggest(primeiroTamanho, segundoTamanho));
+    char *resultado = malloc((tamanhoMaximo + 1) * sizeof(char));
+    verificaAlocacao(resultado);
 
+    int emprestimo = 0;
+    size_t i;
+
+    for (i = 0; i < tamanhoMaximo; i++) {
+        //Adicionar explicação disso: importante para operações entre numeros de tamanhos diferentes 
+        //garante que não sejam acessadas posições invalidas quando o numero for completamente percorrido
+        int primeiroDigito = (i < *primeiroTamanho) ? primeiroNumero[i] - '0' : 0;
+        int segundoDigito = (i < *segundoTamanho) ? segundoNumero[i] - '0' : 0;
+
+        int subtracao = primeiroDigito - segundoDigito - emprestimo;
+
+        if (subtracao < 0) {
+            subtracao += 10;
+            emprestimo = 1;
+        } else {
+            emprestimo = 0;
+        }
+
+        resultado[i] = (char)(subtracao + '0');
+    }
+
+    resultado[i] = '\0';
+
+    invertNumber(resultado);
+
+    removeZerosAEsquerda(resultado);
+
+    return resultado;
 }
 
+//Função principal para testar tudo, DEVE SER APAGADA para alterar para TAD
 int main(int argc, char const *argv[]){
     int primeiroNegativo, segundoNegativo;
     size_t primeiroTamanho, segundoTamanho;
@@ -126,18 +178,23 @@ int main(int argc, char const *argv[]){
     printf("Digite o segundo numero: ");
     char *segundoNumero = readNumber(&segundoTamanho, &segundoNegativo);
 
-    char *resultado = sum(primeiroNumero, &primeiroTamanho, &segundoTamanho, segundoNumero);
+    char *resultado = subtract(primeiroNumero, &primeiroTamanho, &segundoTamanho, segundoNumero);
 
     size_t i = 0;
-    if(resultado[i] == '0'){
+    if(resultado[i] == '0' && (strlen(resultado) > 1)){
         i = 1;
     }
 
-    printf("Resultado da soma: %s", &resultado[i]);
+    if(strlen(resultado) == 0){
+        resultado[0] = '0';
+        resultado += primeiroTamanho-1;
+    }
 
-    free(primeiroNumero);
-    free(segundoNumero);
+    printf("Resultado da subtracao: %s", &resultado[i]);
+
+    liberaMemoria(primeiroNumero);
+    liberaMemoria(segundoNumero);
+    liberaMemoria(resultado);
 
     return 0;
 }
-
