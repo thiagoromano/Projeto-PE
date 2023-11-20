@@ -92,13 +92,13 @@ char* readNumber(size_t *tamanho, int *numeroNegativo){
 
 }
 
-char verificaOperacao(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero, char *operacao){
+char verificaOperacao(char *primeiroNumero, size_t *primeiroTamanho, char *segundoNumero, size_t *segundoTamanho, char *operacao){
     
 }
 
 
 //Função de soma
-char* sum(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero){
+char* sum(char *primeiroNumero, size_t *primeiroTamanho, char *segundoNumero, size_t *segundoTamanho){
     // somar posição a posição, se passar de 9 adicionar lógica de carry para passar a casa da dezena para a proxima posição somando
     // pensar em como encerrar o processo quando o tamanho de um dos vetores chegar ao final e só repetir ate os numeros até o final dos carry
 
@@ -134,7 +134,7 @@ char* sum(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho,
 }
 
 //Função de subtração
-char* subtract(char *primeiroNumero, size_t *primeiroTamanho, size_t *segundoTamanho, char *segundoNumero) {
+char* subtract(char *primeiroNumero, size_t *primeiroTamanho, char *segundoNumero, size_t *segundoTamanho) {
     size_t tamanhoMaximo = (*findBiggest(primeiroTamanho, segundoTamanho));
     char *resultado = malloc((tamanhoMaximo + 1) * sizeof(char));
     verificaAlocacao(resultado);
@@ -178,7 +178,7 @@ int main(int argc, char const *argv[]){
     printf("Digite o segundo numero: ");
     char *segundoNumero = readNumber(&segundoTamanho, &segundoNegativo);
 
-    char *resultado = subtract(primeiroNumero, &primeiroTamanho, &segundoTamanho, segundoNumero);
+    char *resultado = subtract(primeiroNumero, &primeiroTamanho, segundoNumero, &segundoTamanho);
 
     size_t i = 0;
     if(resultado[i] == '0' && (strlen(resultado) > 1)){
