@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #define CAPACIDADE_INICIAL 100 //Define um tamanho inicial para o vetor que armazenará os números
 
 typedef struct{
@@ -128,10 +127,15 @@ bigNumber* readNumber(){
     verificaAlocacao(numero);
     numero->tamanho = 0; // define o valor de tamanho para 0;
 
+    
     int c; // cria um inteiro c
 
     while((c = getchar()) != '\n'){ //Lê os dados do usuário utilizando getchar() para pegar digito a digito enquanto a entrada for diferente de '\n'
         //Bloco condicional para aumentar, se necessário, a memória alocada no vetor
+        if (feof(stdin) || ferror(stdin)) {
+            liberaMemoria(numero);
+            return NULL;
+        }
         if (numero->tamanho == capacidade){ //Se o tamanho do vetor for igual a capacidade
             capacidade += capacidade/4; //Aumente a capacidade do vetor em 25%
             numero->numero = realloc(numero->numero, capacidade * sizeof(char)); //Comando para realocar a memória do vetor para a nova capacidade incrementada
@@ -148,7 +152,6 @@ bigNumber* readNumber(){
 
 
     numero->tamanho = strlen(numero->numero);  
-    // numero->numero = realloc(numero->numero, (numero->tamanho + 1) * sizeof(char));  
     verificaAlocacao(numero);
     
     verificaSinais(numero);
@@ -157,6 +160,14 @@ bigNumber* readNumber(){
 
     return numero;
 
+}
+
+void ifResultadoNegativo(bigNumber* resultado){
+    if(resultado->isNegative){
+        memmove(resultado->numero + 1, resultado->numero, resultado->tamanho + 1);
+        resultado->numero[0] = '-';
+        resultado->tamanho++;
+    }
 }
 
 //Função de soma
@@ -196,9 +207,10 @@ bigNumber* sum(bigNumber* primeiroNumero, bigNumber* segundoNumero){
 }
 
 //Função de subtração
-bigNumber* subtract(bigNumber* primeiroNumero, bigNumber* segundoNumero, bigNumber* resultado) {
+bigNumber* subtract(bigNumber* primeiroNumero, bigNumber* segundoNumero) {
 
     size_t tamanhoMaximo = findBiggest(primeiroNumero, segundoNumero);
+    bigNumber *resultado = malloc(sizeof(bigNumber));
     resultado->numero = malloc((tamanhoMaximo + 2) * sizeof(char));
     verificaAlocacao(resultado);
 
@@ -231,16 +243,6 @@ bigNumber* subtract(bigNumber* primeiroNumero, bigNumber* segundoNumero, bigNumb
 }
 
 bigNumber* multiply(bigNumber* primeiroNumero, bigNumber* segundoNumero) {
-
-    if (strcmp(primeiroNumero->numero, "0") == 0 || strcmp(segundoNumero->numero, "0") == 0) {
-        bigNumber* resultadoZero = malloc(sizeof(bigNumber));
-        resultadoZero->numero = malloc(2 * sizeof(char)); // Para armazenar '0' e '\0'
-        strcpy(resultadoZero->numero, "0");
-        resultadoZero->tamanho = 1;
-        resultadoZero->isNegative = 0;
-        return resultadoZero;
-    }
-
 
     size_t tamanhoResultado = primeiroNumero->tamanho + segundoNumero->tamanho;
     bigNumber* resultado = malloc(sizeof(bigNumber));
@@ -276,75 +278,111 @@ bigNumber* multiply(bigNumber* primeiroNumero, bigNumber* segundoNumero) {
     removeZerosADireita(resultado);
     invertNumber(resultado);
 
-    resultado->isNegative = (primeiroNumero->isNegative != segundoNumero->isNegative);
-    if (resultado->isNegative) {
-        memmove(resultado->numero + 1, resultado->numero, resultado->tamanho + 1);
-        resultado->numero[0] = '-';
-        resultado->tamanho++;
-    }
-
     return resultado;
 }
 
+void inverteNumeros(bigNumber* primeiroNumero, bigNumber* segundoNumero){
+    bigNumber *temp = NULL;
+    temp = primeiroNumero;
+    primeiroNumero= segundoNumero;
+    segundoNumero = temp;
+    liberaMemoria(temp);
+}
+
 bigNumber* verificaOperacao(bigNumber* primeiroNumero, bigNumber* segundoNumero){
-    bigNumber* resultado;
-    resultado = malloc(sizeof(bigNumber));
     char operacao;
-    bigNumber *temp;
-    printf("um\n");
-    temp = malloc(sizeof(bigNumber));
-    printf("dois\n");
+    bigNumber *temp = NULL;
+
     scanf(" %c", &operacao);
 
     int compara = compararNumeros(primeiroNumero, segundoNumero);
-    printf("tres\n");
-    switch(operacao){
-        case ('+'):
-            printf("quatro\n");
-            resultado = sum(primeiroNumero, segundoNumero);
-            printf("quatro.2\n");
-            break;
-        case('-'):
-            printf("cinco\n");
-            if(compara == 0){
-                resultado->tamanho = 1;
-                resultado->numero = malloc(2 * sizeof(char));
-                strcpy(resultado->numero, "0");
-                return resultado;
-            } else if (compara < 0){
-                temp = primeiroNumero;
-                primeiroNumero= segundoNumero;
-                segundoNumero = temp;
+    
+    bigNumber *resultado = NULL;
+
+    if(operacao == '+'){
+        if(primeiroNumero->isNegative && !segundoNumero->isNegative){
+            if(compara < 0){
+                inverteNumeros(primeiroNumero, segundoNumero);
+                resultado = subtract(primeiroNumero, segundoNumero);
+            } else{
+                resultado = subtract(primeiroNumero, segundoNumero);
                 resultado->isNegative = 1;
             }
-            printf("seis\n");
-            subtract(primeiroNumero, segundoNumero, resultado);
-            if(resultado->isNegative){
-                printf("sete\n");
-                memmove(resultado->numero + 1, resultado->numero, resultado->tamanho + 1);
-                printf("oito\n");
-                resultado->numero[0] = '-';
-                resultado->tamanho++;
+        } else if(primeiroNumero->isNegative && segundoNumero->isNegative){
+            resultado = sum(primeiroNumero, segundoNumero);
+            resultado->isNegative = 1;
+        } else if(!primeiroNumero->isNegative && segundoNumero->isNegative){
+            if(compara < 0){
+                inverteNumeros(primeiroNumero, segundoNumero);
+                resultado = subtract(primeiroNumero, segundoNumero);
+                resultado->isNegative = 1;
+            } else{
+                resultado = subtract(primeiroNumero, segundoNumero);
             }
-            break;
-        case('*'):
-            resultado = multiply(primeiroNumero, segundoNumero);
-            break;
-        default:
-            printf("Operacao invalida: %c\n", operacao);
-            resultado = NULL;
+        } else{
+            resultado = sum(primeiroNumero, segundoNumero);
+        }
+    } else if(operacao == '-'){
+        resultado = malloc(sizeof(bigNumber));
+        if(!resultado){
+            return NULL;
+        }
+        resultado->numero = NULL;
+        if(primeiroNumero->isNegative && !segundoNumero->isNegative){
+            resultado = sum(primeiroNumero, segundoNumero);
+            resultado->isNegative = 1;
+        } else if(primeiroNumero->isNegative && segundoNumero->isNegative){
+            if(compara < 0){
+                inverteNumeros(primeiroNumero, segundoNumero);
+                resultado = subtract(primeiroNumero, segundoNumero);
+            } else{
+                resultado = subtract(primeiroNumero, segundoNumero);
+                resultado->isNegative = 1;
+            }
+        } else if (!primeiroNumero->isNegative && segundoNumero->isNegative){
+            resultado = sum(primeiroNumero, segundoNumero);
+        } else{
+            if(compara < 0){
+                inverteNumeros(primeiroNumero, segundoNumero);
+                resultado = subtract(primeiroNumero, segundoNumero);
+                resultado->isNegative = 1;
+            } else{
+                resultado = subtract(primeiroNumero, segundoNumero);
+            }
+        }
+    } else{
+        if (strcmp(primeiroNumero->numero, "0") == 0 || strcmp(segundoNumero->numero, "0") == 0) {
+            liberaMemoria(resultado);
+            resultado = malloc(sizeof(bigNumber));
+            if(!resultado){
+                return NULL;
+            }
+            resultado->numero = malloc(2 * sizeof(char)); // Para armazenar '0' e '\0'
+            if(!resultado->numero){
+                liberaMemoria(resultado);
+                return NULL;
+            }
+            strcpy(resultado->numero, "0");
+            resultado->tamanho = 1;
+            resultado->isNegative = 0;
+            return resultado;
+        }
+        resultado = multiply(primeiroNumero, segundoNumero);
+        if((!primeiroNumero->isNegative && segundoNumero->isNegative) || (primeiroNumero->isNegative && !segundoNumero->isNegative)){
+            resultado->isNegative = 1;
+        }
     }
     if (temp != NULL) {
         liberaMemoria(temp);
     }
+    ifResultadoNegativo(resultado);
     return resultado;
 }
-
 
 //Função principal para testar tudo, DEVE SER APAGADA para alterar para TAD
 
 int main() {
-    bigNumber *primeiroNumero, *segundoNumero, *resultado;
+    bigNumber *primeiroNumero, *segundoNumero;
 
     while ((primeiroNumero = readNumber()) != NULL) {
         // Verifica se a leitura foi bem-sucedida
@@ -352,29 +390,28 @@ int main() {
             segundoNumero = readNumber();
             
             if (segundoNumero == NULL) {
+                liberaMemoria(primeiroNumero);
                 break;
             }
+            if (primeiroNumero == NULL || segundoNumero == NULL) {
+            break;
+        }
 
-            resultado = verificaOperacao(primeiroNumero, segundoNumero);
-            removeZerosAEsquerda(resultado);
+            bigNumber* resultado = verificaOperacao(primeiroNumero, segundoNumero);
 
             printf("%s\n", resultado->numero);
 
+            liberaMemoria(resultado);
             liberaMemoria(primeiroNumero);
             liberaMemoria(segundoNumero);
-            liberaMemoria(resultado);
 
             // Consumir caractere de nova linha no buffer
+
             getchar();
         } else {
             // Se a leitura falhar, saia do loop
             break;
         }
     }
-
-    liberaMemoria(primeiroNumero);
-    liberaMemoria(segundoNumero);
-    liberaMemoria(resultado);
-
     return 0;
 }
